@@ -10,6 +10,7 @@ public class ClientMain {
             connection.connect();
             Scanner scanner = new Scanner(System.in);
             System.out.println("Conectado al servidor. Operaciones: SUMA, RESTA, MULT, DIV. Escriba SALIR para terminar.");
+
             while (true) {
                 System.out.print("Operacion: ");
                 if (!scanner.hasNextLine()) {
@@ -40,21 +41,26 @@ public class ClientMain {
                     continue;
                 }
 
-                double a = Double.parseDouble(firstText);
-                double b = Double.parseDouble(secondText);
-                Double localResult = calculate(operation, a, b);
-                if (localResult == null) {
-                    System.out.println("Operacion invalida o division entre cero.");
-                    continue;
-                }
-                System.out.println("Resultado: " + localResult);
+                // 1. SERIALIZACIÓN: Armamos la trama custom (Ej: "SUMA|10|5")
+                String request = ProtocoloClient.serializarPeticion(operation, firstText, secondText);
+                System.out.println("Enviando trama al servidor: " + request);
 
-                String request = operation + " " + firstText + " " + secondText;
+                // 2. TRANSMISIÓN: Envío a través del socket
                 String response = connection.sendRequest(request);
+
                 if (response == null) {
                     System.out.println("Sin respuesta del servidor.");
                 } else {
-                    System.out.println("Respuesta servidor: " + response);
+                    // 3. DESERIALIZACIÓN: Rompemos la respuesta usando el puente (Ej: "OK|15.0")
+                    String[] respuestaProcesada = ProtocoloClient.deserializarRespuesta(response);
+                    String estado = respuestaProcesada[0];
+                    String contenido = respuestaProcesada[1];
+
+                    if (estado.equals("OK")) {
+                        System.out.println("Resultado servidor: " + contenido);
+                    } else {
+                        System.err.println("Error servidor: " + contenido);
+                    }
                 }
             }
             scanner.close();
@@ -71,29 +77,6 @@ public class ClientMain {
             return true;
         } catch (NumberFormatException ex) {
             return false;
-        }
-    }
-
-    private static Double calculate(String operation, double a, double b) {
-        String op = operation.trim().toUpperCase();
-        switch (op) {
-            case "SUMA":
-            case "+":
-                return a + b;
-            case "RESTA":
-            case "-":
-                return a - b;
-            case "MULT":
-            case "*":
-                return a * b;
-            case "DIV":
-            case "/":
-                if (b == 0.0) {
-                    return null;
-                }
-                return a / b;
-            default:
-                return null;
         }
     }
 }
