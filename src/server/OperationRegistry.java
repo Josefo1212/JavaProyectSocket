@@ -15,7 +15,7 @@ public class OperationRegistry implements OperationExecutor {
     }
 
     @Override
-    public Double ejecutar(String operacion, double a, double b) {
+    public Double ejecutar(String operacion, double[] parametros) {
         if (operacion == null) {
             return null;
         }
@@ -24,7 +24,7 @@ public class OperationRegistry implements OperationExecutor {
             return null;
         }
         try {
-            Object result = method.invoke(target, a, b);
+            Object result = method.invoke(target, (Object) parametros);
             return (Double) result;
         } catch (ReflectiveOperationException ex) {
             return null;
@@ -57,7 +57,7 @@ public class OperationRegistry implements OperationExecutor {
 
     private static boolean isSignatureValid(Method method) {
         Class<?>[] params = method.getParameterTypes();
-        if (params.length != 2 || params[0] != double.class || params[1] != double.class) {
+        if (params.length != 1 || params[0] != double[].class) {
             return false;
         }
         return Double.class.equals(method.getReturnType());
@@ -67,4 +67,3 @@ public class OperationRegistry implements OperationExecutor {
         return operacion.trim().toUpperCase();
     }
 }
-

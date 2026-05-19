@@ -55,14 +55,16 @@ public class ServerConnection {
 
         JsonArray array = datos.getAsJsonArray();
         if (array.size() < 2) {
-            return RespuestaDto.error("Se requieren dos parametros numericos");
+            return RespuestaDto.error("Se requieren al menos dos parametros numericos");
         }
 
         try {
-            double a = array.get(0).getAsDouble();
-            double b = array.get(1).getAsDouble();
+            double[] parametros = new double[array.size()];
+            for (int i = 0; i < array.size(); i++) {
+                parametros[i] = array.get(i).getAsDouble();
+            }
 
-            Double resultado = executor.ejecutar(peticion.getOperacion(), a, b);
+            Double resultado = executor.ejecutar(peticion.getOperacion(), parametros);
             if (resultado == null) {
                 return RespuestaDto.error("Operacion invalida o division por cero");
             }

@@ -2,6 +2,8 @@ package client;
 
 import com.google.gson.JsonElement;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ClientMain {
     public static void main(String[] args) {
@@ -20,15 +22,34 @@ public class ClientMain {
                     break;
                 }
 
-                String firstText = interfaz.pedirNumero("Primer numero (A): ");
-                String secondText = interfaz.pedirNumero("Segundo numero (B): ");
-
-                if (!isValidNumber(firstText) || !isValidNumber(secondText)) {
-                    System.out.println("Entrada invalida. Use numeros reales (ej: 10, -3.5).");
+                String cantidadTexto = interfaz.pedirCantidadParametros();
+                if (!isValidInteger(cantidadTexto)) {
+                    System.out.println("Entrada invalida. Use un entero (ej: 2, 3, 4)." );
                     continue;
                 }
 
-                String request = ProtocoloClient.serializarPeticion(operation, firstText, secondText);
+                int cantidad = Integer.parseInt(cantidadTexto);
+                if (cantidad < 2) {
+                    System.out.println("Se requieren al menos 2 parametros.");
+                    continue;
+                }
+
+                List<String> valores = new ArrayList<>();
+                boolean invalido = false;
+                for (int i = 1; i <= cantidad; i++) {
+                    String texto = interfaz.pedirNumero("Parametro #" + i + ": ");
+                    if (!isValidNumber(texto)) {
+                        System.out.println("Entrada invalida. Use numeros reales (ej: 10, -3.5).");
+                        invalido = true;
+                        break;
+                    }
+                    valores.add(texto);
+                }
+                if (invalido) {
+                    continue;
+                }
+
+                String request = ProtocoloClient.serializarPeticion(operation, valores);
                 System.out.println("Enviando JSON al servidor: " + request);
 
                 String response = connection.sendRequest(request);
@@ -61,6 +82,15 @@ public class ClientMain {
     private static boolean isValidNumber(String value) {
         try {
             Double.parseDouble(value);
+            return true;
+        } catch (NumberFormatException ex) {
+            return false;
+        }
+    }
+
+    private static boolean isValidInteger(String value) {
+        try {
+            Integer.parseInt(value);
             return true;
         } catch (NumberFormatException ex) {
             return false;

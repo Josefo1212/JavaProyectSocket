@@ -14,6 +14,11 @@ public class InterfazUsuario {
         return scanner.nextLine().trim();
     }
 
+    public String pedirCantidadParametros() {
+        System.out.print("Cantidad de parametros (minimo 2): ");
+        return scanner.nextLine().trim();
+    }
+
     public String pedirNumero(String mensaje) {
         System.out.print(mensaje);
         return scanner.nextLine().trim();
@@ -23,4 +28,3 @@ public class InterfazUsuario {
         scanner.close();
     }
 }
-
