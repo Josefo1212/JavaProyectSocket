@@ -1,16 +1,26 @@
 package server;
 
 public class Calculadora {
-    public static Double calcular(String operation, double a, double b) {
-        switch (operation.toUpperCase()) {
-            case "SUMA": case "+": return a + b;
-            case "RESTA": case "-": return a - b;
-            case "MULT": case "*": return a * b;
-            case "DIV": case "/":
-                if (b == 0.0) return null; // Previene indeterminación
-                return a / b;
-            default: return null;
+    @Operacion({"SUMA", "+"})
+    public Double suma(double a, double b) {
+        return a + b;
+    }
+
+    @Operacion({"RESTA", "-"})
+    public Double resta(double a, double b) {
+        return a - b;
+    }
+
+    @Operacion({"MULT", "*"})
+    public Double mult(double a, double b) {
+        return a * b;
+    }
+
+    @Operacion({"DIV", "/"})
+    public Double div(double a, double b) {
+        if (b == 0.0) {
+            return null;
         }
+        return a / b;
     }
 }
-

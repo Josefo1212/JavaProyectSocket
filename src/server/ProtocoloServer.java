@@ -1,22 +1,29 @@
 package server;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
+
 public class ProtocoloServer {
+    private static final Gson GSON = new Gson();
+
     /**
-     * Traduce los bytes de la red a variables procesables por el servidor.
-     * Ejemplo: "SUMA|10|5" -> ["SUMA", "10", "5"]
+     * Traduce el JSON recibido en una peticion estructurada.
      */
-    public static String[] deserializarPeticion(String peticionCruda) {
+    public static PeticionDto deserializarPeticion(String peticionCruda) {
         if (peticionCruda == null || peticionCruda.isEmpty()) {
             return null;
         }
-        return peticionCruda.split("\\|");
+        try {
+            return GSON.fromJson(peticionCruda, PeticionDto.class);
+        } catch (JsonSyntaxException ex) {
+            return null;
+        }
     }
 
     /**
-     * Convierte el resultado del cálculo en la trama de respuesta reglamentaria.
-     * Ejemplo: "OK", "25.5" -> "OK|25.5"
+     * Convierte la respuesta en JSON para enviar al cliente.
      */
-    public static String serializarRespuesta(String estado, String contenido) {
-        return estado.toUpperCase() + "|" + contenido;
+    public static String serializarRespuesta(RespuestaDto respuesta) {
+        return GSON.toJson(respuesta);
     }
 }

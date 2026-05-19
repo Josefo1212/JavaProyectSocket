@@ -1,5 +1,6 @@
 package client;
 
+import com.google.gson.JsonElement;
 import java.io.IOException;
 
 public class ClientMain {
@@ -28,21 +29,24 @@ public class ClientMain {
                 }
 
                 String request = ProtocoloClient.serializarPeticion(operation, firstText, secondText);
-                System.out.println("Enviando trama al servidor: " + request);
+                System.out.println("Enviando JSON al servidor: " + request);
 
                 String response = connection.sendRequest(request);
 
                 if (response == null) {
                     System.out.println("Sin respuesta del servidor.");
                 } else {
-                    String[] respuestaProcesada = ProtocoloClient.deserializarRespuesta(response);
-                    String estado = respuestaProcesada[0];
-                    String contenido = respuestaProcesada[1];
+                    RespuestaDto respuestaProcesada = ProtocoloClient.deserializarRespuesta(response);
+                    if (respuestaProcesada == null) {
+                        System.out.println("Respuesta invalida del servidor.");
+                        continue;
+                    }
 
-                    if (estado.equals("OK")) {
-                        System.out.println("Resultado servidor: " + contenido);
+                    if ("OK".equalsIgnoreCase(respuestaProcesada.getEstado())) {
+                        JsonElement resultado = respuestaProcesada.getResultado();
+                        System.out.println("Resultado servidor: " + (resultado == null ? "null" : resultado.toString()));
                     } else {
-                        System.err.println("Error servidor: " + contenido);
+                        System.err.println("Error servidor: " + respuestaProcesada.getMensaje());
                     }
                 }
             }

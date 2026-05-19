@@ -1,23 +1,30 @@
 package client;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+
 public class ProtocoloClient {
+    private static final Gson GSON = new Gson();
+
     /**
-     * Convierte la operación y los parámetros a una trama de texto crudo.
-     * Ejemplo: "SUMA", "10", "5" -> "SUMA|10|5"
+     * Convierte la operacion y los parametros a una trama JSON.
+     * Ejemplo: "SUMA", "10", "5" -> {"operacion":"SUMA","datos":[10,5]}
      */
     public static String serializarPeticion(String operacion, String a, String b) {
-        return operacion.trim().toUpperCase() + "|" + a.trim() + "|" + b.trim();
+        JsonArray datos = new JsonArray();
+        datos.add(Double.parseDouble(a.trim()));
+        datos.add(Double.parseDouble(b.trim()));
+        PeticionDto peticion = new PeticionDto(operacion.trim().toUpperCase(), datos);
+        return GSON.toJson(peticion);
     }
 
     /**
-     * Pica la respuesta del servidor para verificar el estado de la operación.
-     * Ejemplo: "OK|15.0" -> ["OK", "15.0"]
+     * Convierte la respuesta JSON del servidor en un objeto RespuestaDto.
      */
-    public static String[] deserializarRespuesta(String respuestaCruda) {
+    public static RespuestaDto deserializarRespuesta(String respuestaCruda) {
         if (respuestaCruda == null || respuestaCruda.isEmpty()) {
-            return new String[]{"ERROR", "Sin respuesta del servidor"};
+            return new RespuestaDto("ERROR", null, "Sin respuesta del servidor");
         }
-        // split("\\|") usa doble barra porque el pipe es un carácter especial en Regex
-        return respuestaCruda.split("\\|");
+        return GSON.fromJson(respuestaCruda, RespuestaDto.class);
     }
 }

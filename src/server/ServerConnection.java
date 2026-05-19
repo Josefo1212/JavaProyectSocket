@@ -1,5 +1,8 @@
 package server;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonPrimitive;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -12,9 +15,11 @@ public class ServerConnection {
     private static final String HOST = "127.0.0.1";
 
     private final int port;
+    private final OperationExecutor executor;
 
-    public ServerConnection(int port) {
+    public ServerConnection(int port, OperationExecutor executor) {
         this.port = port;
+        this.executor = executor;
     }
 
     public void start() {
@@ -26,38 +31,44 @@ public class ServerConnection {
 
                 String line;
                 while ((line = in.readLine()) != null) {
-                    System.out.println("Llegó trama cruda al servidor: " + line);
+                    System.out.println("Llego JSON al servidor: " + line);
 
-                    String[] partes = ProtocoloServer.deserializarPeticion(line);
-                    if (partes == null || partes.length < 3) {
-                        out.println(ProtocoloServer.serializarRespuesta("ERROR", "Trama incompleta o invalida"));
-                        continue;
-                    }
-
-                    String operacion = partes[0];
-                    String aText = partes[1];
-                    String bText = partes[2];
-
-                    try {
-                        double a = Double.parseDouble(aText);
-                        double b = Double.parseDouble(bText);
-
-                        // Usar la clase Calculadora
-                        Double resultado = Calculadora.calcular(operacion, a, b);
-
-                        if (resultado == null) {
-                            out.println(ProtocoloServer.serializarRespuesta("ERROR", "Operacion invalida o division por cero"));
-                        } else {
-                            out.println(ProtocoloServer.serializarRespuesta("OK", String.valueOf(resultado)));
-                        }
-
-                    } catch (NumberFormatException e) {
-                        out.println(ProtocoloServer.serializarRespuesta("ERROR", "Los parametros no son numeros validos"));
-                    }
+                    PeticionDto peticion = ProtocoloServer.deserializarPeticion(line);
+                    RespuestaDto respuesta = procesarPeticion(peticion);
+                    out.println(ProtocoloServer.serializarRespuesta(respuesta));
                 }
             }
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    private RespuestaDto procesarPeticion(PeticionDto peticion) {
+        if (peticion == null || peticion.getOperacion() == null || peticion.getDatos() == null) {
+            return RespuestaDto.error("Peticion invalida");
+        }
+
+        JsonElement datos = peticion.getDatos();
+        if (!datos.isJsonArray()) {
+            return RespuestaDto.error("Se esperan parametros en un arreglo JSON");
+        }
+
+        JsonArray array = datos.getAsJsonArray();
+        if (array.size() < 2) {
+            return RespuestaDto.error("Se requieren dos parametros numericos");
+        }
+
+        try {
+            double a = array.get(0).getAsDouble();
+            double b = array.get(1).getAsDouble();
+
+            Double resultado = executor.ejecutar(peticion.getOperacion(), a, b);
+            if (resultado == null) {
+                return RespuestaDto.error("Operacion invalida o division por cero");
+            }
+            return RespuestaDto.ok(new JsonPrimitive(resultado));
+        } catch (RuntimeException ex) {
+            return RespuestaDto.error("Los parametros no son numeros validos");
         }
     }
 }
